@@ -26,11 +26,11 @@
 void LidarMsgCallback(const sensor_msgs::LaserScan::ConstPtr& data)
 {
     unsigned int lens = (data->angle_max - data->angle_min) / data->angle_increment;  
-    ROS_INFO_STREAM("[ldrobot] [listen] angle_min: " << RADIAN_TO_DEGREES(data->angle_min) << " "
+    ROS_INFO_STREAM("[listen] angle_min: " << RADIAN_TO_DEGREES(data->angle_min) << " "
           << "angle_max: " << RADIAN_TO_DEGREES(data->angle_max)); 
     
     for (unsigned int i = 0; i < lens; i++) {
-      ROS_INFO_STREAM("[ldrobot] [listen] angle: " << RADIAN_TO_DEGREES((data->angle_min + i * data->angle_increment)) << " "
+      ROS_INFO_STREAM("[listen] angle: " << RADIAN_TO_DEGREES((data->angle_min + i * data->angle_increment)) << " "
             <<  "range: " <<  data->ranges[i] << " " 
             << "intensites: " <<  data->intensities[i]);
     }
@@ -47,14 +47,14 @@ int main(int argc, char  **argv)
   n.getParam("topic_name", topic_name);
 
   if (topic_name.empty()) {
-    ROS_ERROR("[ldrobot] input param <topic_name> is null");
+    ROS_ERROR("input param <topic_name> is null");
     exit(EXIT_FAILURE);
   } else {
-    ROS_INFO("[ldrobot] input param <topic_name> is %s", topic_name.c_str());
+    ROS_INFO("input param <topic_name> is %s", topic_name.c_str());
   }
   
   ros::Subscriber msg_subs = nh.subscribe(topic_name, 10, &LidarMsgCallback);
-  ROS_INFO("[ldrobot] start ldldiar message subscribe node");
+  ROS_INFO("start ldldiar message subscribe node");
 
   ros::Rate loop_rate(6);
   while (ros::ok()) {

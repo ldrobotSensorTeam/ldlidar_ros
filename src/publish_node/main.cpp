@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
         break;
       }
       case ldlidar::LidarStatus::DATA_TIME_OUT: {
-        ROS_ERROR("ldlidar point cloud data publish time out, please check your lidar device.");
+        ROS_ERROR("point cloud data publish time out, please check your lidar device.");
         node->Stop();
         break;
       }

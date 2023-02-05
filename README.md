@@ -3,7 +3,8 @@
 # 操作指南
 
 >此SDK仅适用于深圳乐动机器人有限公司销售的激光雷达产品，产品型号为:
-> - LDROBOT LiDAR LD14
+>
+>- LDROBOT LiDAR LD14
 
 ## 0. 获取雷达的ROS功能包
 ```bash
@@ -13,9 +14,9 @@ mkdir -p ldlidar_ros_ws/src
 
 cd ldlidar_ros_ws/src
 
-git clone  https://github.com/ldrobotSensorTeam/ldlidar_sl_ros.git
-# 或者
-git clone  https://gitee.com/ldrobotSensorTeam/ldlidar_sl_ros.git
+git clone  xxxx
+
+git submodule update --init --recursive
 ```
 
 ## 1. 系统设置
@@ -143,6 +144,7 @@ rviz
 # Instructions
 
 > This SDK is only applicable to the LiDAR products sold by Shenzhen LDROBOT Co., LTD. The product models are :
+>
 > - LDROBOT LiDAR LD14
 
 ## step 0: get LiDAR ROS Package
