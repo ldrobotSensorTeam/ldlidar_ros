@@ -47,7 +47,7 @@ sudo chmod 777 /dev/ttyUSB0
 <arg name="fix_to_base_link" default="true" />
 
 <!-- LDROBOT LiDAR message publisher node -->
- <node name="ldlidar_publisher_ld14" pkg="ldlidar_sl_ros" type="ldlidar_sl_ros_node" output="screen">
+ <node name="ldlidar_publisher_ld14" pkg="ldlidar_ros" type="ldlidar_ros_node" output="screen">
   <param name="product_name" value="LDLiDAR_LD14"/>
   <param name="laser_scan_topic_name" value="$(arg laser_scan_topic_name)"/>
   <param name="point_cloud_2d_topic_name" value="$(arg point_cloud_2d_topic_name)"/>
@@ -68,10 +68,6 @@ sudo chmod 777 /dev/ttyUSB0
   <param name="angle_crop_min" type="double" value="135.0"/>
   <param name="angle_crop_max" type="double" value="225.0"/>
  </node>
- <!-- LDROBOT LiDAR message subscriber node -->
- <!-- node name="ldlidar_listener_ld14" pkg="ldlidar_sl_ros" type="ldlidar_sl_ros_listen_node" output="screen">
-  <param name="topic_name" value="scan"/>
- </node -->
  <!-- publisher tf transform, parents frame is base_link, child frame is base_laser -->
  <!-- args="x y z yaw pitch roll parents_frame_id child_frame_id period_in_ms"-->
  <node name="base_to_laser_ld14" pkg="tf" type="static_transform_publisher"  args="0.0 0.0 0.18 0 0.0 0.0 base_link base_laser 50" if="$(arg fix_to_base_link)"/>
