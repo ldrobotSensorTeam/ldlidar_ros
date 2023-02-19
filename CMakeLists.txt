@@ -134,21 +134,18 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-file(GLOB  LDLIDAR_DRI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/sdk/src/*.cpp)
+file(GLOB  LDLIDAR_DRI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/sdk/src/ldlidar_driver/*.cpp)
 
-file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/publish_node/*.cpp)
-file(GLOB  LISTEN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/listen_node/*.cpp)
+file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 add_executable(${PROJECT_NAME}_node
   ${MAIN_SRC} 
   ${LDLIDAR_DRI_SOURCE} 
 )
-target_link_libraries(${PROJECT_NAME}_node pthread ${catkin_LIBRARIES})
-
-add_executable(${PROJECT_NAME}_listen_node  
-  ${LISTEN_SRC}
+target_link_libraries(${PROJECT_NAME}_node 
+  pthread 
+  ${catkin_LIBRARIES}
 )
-target_link_libraries(${PROJECT_NAME}_listen_node  ${catkin_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -205,7 +202,7 @@ install(PROGRAMS
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
-install(TARGETS ${PROJECT_NAME}_node ${PROJECT_NAME}_listen_node
+install(TARGETS ${PROJECT_NAME}_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

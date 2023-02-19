@@ -1,6 +1,6 @@
 /**
  * @file main.cpp
- * @author LDRobot (contact@ldrobot.com)
+ * @author LDRobot (support@ldrobot.com)
  * @brief  main process App
  *         This code is only applicable to LDROBOT LiDAR LD00 LD03 LD08 LD14
  * products sold by Shenzhen LDROBOT Co., LTD
@@ -18,8 +18,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "ldlidar_driver.h"
+
 #include "ros_api.h"
+#include "ldlidar_driver/ldlidar_driver.h"
 
 uint64_t GetTimestamp(void);
 
@@ -39,8 +40,8 @@ int main(int argc, char **argv) {
   std::string point_cloud_2d_topic_name;
 	std::string port_name;
   LaserScanSetting setting;
-  int serial_baudrate = 0;
-  ldlidar::LDType lidartypename = ldlidar::LDType::NO_VER;
+  int serial_baudrate;
+  ldlidar::LDType lidar_type;
 
   nh_private.getParam("product_name", product_name);
 	nh_private.param("laser_scan_topic_name", laser_scan_topic_name, std::string("scan"));
@@ -52,10 +53,12 @@ int main(int argc, char **argv) {
   nh_private.param("enable_angle_crop_func", setting.enable_angle_crop_func, bool(false));
   nh_private.param("angle_crop_min", setting.angle_crop_min, double(0.0));
   nh_private.param("angle_crop_max", setting.angle_crop_max, double(0.0));
+  nh_private.param("range_min", setting.range_min, double(0.02));
+  nh_private.param("range_max", setting.range_max, double(12.0));
 
-  ldlidar::LDLidarDriver* node = new ldlidar::LDLidarDriver();
+  ldlidar::LDLidarDriver* ldlidar_drv = new ldlidar::LDLidarDriver();
 
-  ROS_INFO("LDLiDAR SDK Pack Version is:%s", node->GetLidarSdkVersionNumber().c_str());
+  ROS_INFO("LDLiDAR SDK Pack Version is:%s", ldlidar_drv->GetLidarSdkVersionNumber().c_str());
   ROS_INFO("ROS param input: ");
   ROS_INFO("<product_name>: %s", product_name.c_str());
   ROS_INFO("<laser_scan_topic_name>: %s", laser_scan_topic_name.c_str());
@@ -67,31 +70,37 @@ int main(int argc, char **argv) {
   ROS_INFO("<enable_angle_crop_func>: %s", (setting.enable_angle_crop_func?"true":"false"));
   ROS_INFO("<angle_crop_min>: %f", setting.angle_crop_min);
   ROS_INFO("<angle_crop_max>: %f", setting.angle_crop_max);
+  ROS_INFO("<range_min>: %f", setting.range_min);
+  ROS_INFO("<range_max>: %f", setting.range_max);
 
-  node->RegisterGetTimestampFunctional(std::bind(&GetTimestamp)); 
+  ldlidar_drv->RegisterGetTimestampFunctional(std::bind(&GetTimestamp)); 
 
-  node->EnableFilterAlgorithnmProcess(true);
+  ldlidar_drv->EnableFilterAlgorithnmProcess(true);
 
   if (port_name.empty()) {
     ROS_ERROR("fail, input param <port_name> is empty!");
     exit(EXIT_FAILURE);
   }
 
-  if(product_name == "LDLiDAR_LD14") {
-    lidartypename = ldlidar::LDType::LD_14;
+  if(!strcmp(product_name.c_str(),"LDLiDAR_LD14")) {
+    lidar_type = ldlidar::LDType::LD_14;
+  } else if (!strcmp(product_name.c_str(), "LDLiDAR_LD06")) {
+    lidar_type = ldlidar::LDType::LD_06;
+  } else if (!strcmp(product_name.c_str(), "LDLiDAR_LD19")) {
+    lidar_type = ldlidar::LDType::LD_19;
   } else{
     ROS_ERROR("Error, input param <product_name> is fail!!");
     exit(EXIT_FAILURE);
   }
 
-  if (node->Start(lidartypename, port_name, serial_baudrate)) {
-    ROS_INFO("ldlidar node start is success");
+  if (ldlidar_drv->Start(lidar_type, port_name, serial_baudrate)) {
+    ROS_INFO("ldlidar_drv start is success");
   } else {
-    ROS_ERROR("ldlidar node start is fail");
+    ROS_ERROR("ldlidar_drv start is fail");
     exit(EXIT_FAILURE);
   }
 
-  if (node->WaitLidarCommConnect(3500)) {
+  if (ldlidar_drv->WaitLidarCommConnect(3500)) {
     ROS_INFO("ldlidar communication is normal.");
   } else {
     ROS_ERROR("ldlidar communication is abnormal.");
@@ -104,22 +113,23 @@ int main(int argc, char **argv) {
   ros::Publisher lidar_pub_pointcloud = 
     nh.advertise<sensor_msgs::PointCloud>(point_cloud_2d_topic_name, 10); // create a ROS sensor_msgs/PointCloud Message topic
 
-  ros::Rate r(6); 
+  ros::Rate r(10); 
   ldlidar::Points2D laser_scan_points;
   ROS_INFO("start normal, pub lidar data");
-  while (ros::ok() && ldlidar::LDLidarDriver::IsOk()) {
+  while (ros::ok() && 
+    ldlidar::LDLidarDriver::IsOk()) {
 
-    switch (node->GetLaserScanData(laser_scan_points, 1500)){
+    switch (ldlidar_drv->GetLaserScanData(laser_scan_points, 1500)){
       case ldlidar::LidarStatus::NORMAL: {
         double lidar_scan_freq = 0;
-        node->GetLidarScanFreq(lidar_scan_freq);
+        ldlidar_drv->GetLidarScanFreq(lidar_scan_freq);
         ToLaserscanMessagePublish(laser_scan_points, lidar_scan_freq, setting, lidar_pub_laserscan);
         ToSensorPointCloudMessagePublish(laser_scan_points, setting, lidar_pub_pointcloud);
         break;
       }
       case ldlidar::LidarStatus::DATA_TIME_OUT: {
         ROS_ERROR("point cloud data publish time out, please check your lidar device.");
-        node->Stop();
+        ldlidar_drv->Stop();
         break;
       }
       case ldlidar::LidarStatus::DATA_WAIT: {
@@ -132,10 +142,10 @@ int main(int argc, char **argv) {
     r.sleep();
   }
 
-  node->Stop();
+  ldlidar_drv->Stop();
 
-  delete node;
-  node = nullptr;
+  delete ldlidar_drv;
+  ldlidar_drv = nullptr;
   
   return 0;
 }
@@ -170,6 +180,11 @@ void  ToLaserscanMessagePublish(ldlidar::Points2D& src, double lidar_spin_freq,
   range_min = 0.02;
   range_max = 12;
   int beam_size = static_cast<int>(src.size());
+  if (beam_size <= 1) {
+    end_scan_time = start_scan_time;
+    ROS_ERROR("beam_size <= 1");
+    return;
+  }
   angle_increment = (angle_max - angle_min) / (float)(beam_size -1);
 
   // Calculate the number of scanning points
@@ -213,7 +228,7 @@ void  ToLaserscanMessagePublish(ldlidar::Points2D& src, double lidar_spin_freq,
       int index = (int)((angle - angle_min) / angle_increment);
       if (index < beam_size) {
         if (index < 0) {
-          ROS_ERROR("[ldrobot] error index: %d, beam_size: %d, angle: %f, angle_min: %f, angle_increment: %f", 
+          ROS_ERROR("error index: %d, beam_size: %d, angle: %f, angle_min: %f, angle_increment: %f", 
               index, beam_size, angle, angle_min, angle_increment);
         }
 
@@ -284,31 +299,31 @@ void  ToSensorPointCloudMessagePublish(ldlidar::Points2D& src, LaserScanSetting&
   output.header.stamp = start_scan_time;
   output.header.frame_id = setting.frame_id;
 
-  sensor_msgs::ChannelFloat32 defaultchannelval[3];
+  sensor_msgs::ChannelFloat32 default_channel_val[3];
 
-  defaultchannelval[0].name = std::string("intensity");
-  defaultchannelval[0].values.assign(frame_points_num, std::numeric_limits<float>::quiet_NaN());
-  // output.channels.assign(1, defaultchannelval);
-  output.channels.push_back(defaultchannelval[0]);
+  default_channel_val[0].name = std::string("intensity");
+  default_channel_val[0].values.assign(frame_points_num, std::numeric_limits<float>::quiet_NaN());
+  // output.channels.assign(1, default_channel_val);
+  output.channels.push_back(default_channel_val[0]);
 
   if (frame_points_num <= 1) {
     time_increment = 0;
   } else {
     time_increment = static_cast<float>(scan_time / (double)(frame_points_num - 1));
   }
-  defaultchannelval[1].name = std::string("timeincrement");
-  defaultchannelval[1].values.assign(1, time_increment);
-  output.channels.push_back(defaultchannelval[1]);
+  default_channel_val[1].name = std::string("timeincrement");
+  default_channel_val[1].values.assign(1, time_increment);
+  output.channels.push_back(default_channel_val[1]);
   
-  defaultchannelval[2].name = std::string("scantime");
-  defaultchannelval[2].values.assign(1, scan_time);
-  output.channels.push_back(defaultchannelval[2]);
+  default_channel_val[2].name = std::string("scantime");
+  default_channel_val[2].values.assign(1, scan_time);
+  output.channels.push_back(default_channel_val[2]);
 
-  geometry_msgs::Point32 points_xyz_defaultval;
-  points_xyz_defaultval.x = std::numeric_limits<float>::quiet_NaN();
-  points_xyz_defaultval.y = std::numeric_limits<float>::quiet_NaN();
-  points_xyz_defaultval.z = std::numeric_limits<float>::quiet_NaN();
-  output.points.assign(frame_points_num, points_xyz_defaultval);
+  geometry_msgs::Point32 points_xyz_default_val;
+  points_xyz_default_val.x = std::numeric_limits<float>::quiet_NaN();
+  points_xyz_default_val.y = std::numeric_limits<float>::quiet_NaN();
+  points_xyz_default_val.z = std::numeric_limits<float>::quiet_NaN();
+  output.points.assign(frame_points_num, points_xyz_default_val);
 
   for (int i = 0; i < frame_points_num; i++) {
     float range = dst[i].distance / 1000.f;  // distance unit transform to meters
