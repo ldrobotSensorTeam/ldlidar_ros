@@ -122,6 +122,19 @@ catkin_make
   roslaunch ldlidar_ros viewer_ld14_noetic.launch
   ```
 
+- 产品型号为 LDROBOT LiDAR LD14P
+  - 启动ld14p lidar node:
+  ``` bash
+  roslaunch ldlidar_ros ld14p.launch
+  ```
+  - 启动ld14p lidar node并显示激光数据在Rviz上:
+  ``` bash
+  # if ROS_DISTRO in 'kinetic' or 'melodic'
+  roslaunch ldlidar_ros viewer_ld14p_kinetic_melodic.launch
+  # if ROS_DISTRO in 'noetic'
+  roslaunch ldlidar_ros viewer_ld14p_noetic.launch
+  ```
+
 - 产品型号为 LDROBOT LiDAR LD06
   - 启动ld06 lidar node:
   ``` bash

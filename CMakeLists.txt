@@ -134,16 +134,16 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-file(GLOB  LDLIDAR_DRI_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/sdk/src/ldlidar_driver/*.cpp)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sdk)
 
 file(GLOB  MAIN_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 add_executable(${PROJECT_NAME}_node
   ${MAIN_SRC} 
-  ${LDLIDAR_DRI_SOURCE} 
 )
 target_link_libraries(${PROJECT_NAME}_node 
   pthread 
+  ldlidar_driver
   ${catkin_LIBRARIES}
 )
 

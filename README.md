@@ -109,6 +109,18 @@ catkin_make
   # if ROS_DISTRO in 'noetic'
   roslaunch ldlidar_ros viewer_ld14_noetic.launch
   ```
+- The product is LDROBOT LiDAR LD14P
+  - start ld14p lidar node:
+  ``` bash
+  roslaunch ldlidar_ros ld14p.launch
+  ```
+  - start ld14p lidar node and show on the Rviz:
+  ``` bash
+  # if ROS_DISTRO in 'kinetic' or 'melodic'
+  roslaunch ldlidar_ros viewer_ld14p_kinetic_melodic.launch
+  # if ROS_DISTRO in 'noetic'
+  roslaunch ldlidar_ros viewer_ld14p_noetic.launch
+  ```
 
 - The product is LDROBOT LiDAR LD06
   - start ld06 lidar node:

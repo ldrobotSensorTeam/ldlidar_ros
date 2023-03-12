@@ -20,7 +20,7 @@
  */
 
 #include "ros_api.h"
-#include "ldlidar_driver/ldlidar_driver.h"
+#include "ldlidar_driver/ldlidar_driver_linux.h"
 
 uint64_t GetTimestamp(void);
 
@@ -56,7 +56,8 @@ int main(int argc, char **argv) {
   nh_private.param("range_min", setting.range_min, double(0.02));
   nh_private.param("range_max", setting.range_max, double(12.0));
 
-  ldlidar::LDLidarDriver* ldlidar_drv = new ldlidar::LDLidarDriver();
+  ldlidar::LDLidarDriverLinuxInterface* ldlidar_drv = 
+    ldlidar::LDLidarDriverLinuxInterface::Create();
 
   ROS_INFO("LDLiDAR SDK Pack Version is:%s", ldlidar_drv->GetLidarSdkVersionNumber().c_str());
   ROS_INFO("ROS param input: ");
@@ -75,7 +76,7 @@ int main(int argc, char **argv) {
 
   ldlidar_drv->RegisterGetTimestampFunctional(std::bind(&GetTimestamp)); 
 
-  ldlidar_drv->EnableFilterAlgorithnmProcess(true);
+  ldlidar_drv->EnablePointCloudDataFilter(true);
 
   if (port_name.empty()) {
     ROS_ERROR("fail, input param <port_name> is empty!");
@@ -84,6 +85,8 @@ int main(int argc, char **argv) {
 
   if(!strcmp(product_name.c_str(),"LDLiDAR_LD14")) {
     lidar_type = ldlidar::LDType::LD_14;
+  } else if(!strcmp(product_name.c_str(),"LDLiDAR_LD14P")) {
+    lidar_type = ldlidar::LDType::LD_14P;
   } else if (!strcmp(product_name.c_str(), "LDLiDAR_LD06")) {
     lidar_type = ldlidar::LDType::LD_06;
   } else if (!strcmp(product_name.c_str(), "LDLiDAR_LD19")) {
@@ -93,18 +96,24 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  if (ldlidar_drv->Start(lidar_type, port_name, serial_baudrate)) {
-    ROS_INFO("ldlidar_drv start is success");
+  if (ldlidar_drv->Connect(lidar_type, port_name, serial_baudrate)) {
+    ROS_INFO("ldlidar serial connect is success");
   } else {
-    ROS_ERROR("ldlidar_drv start is fail");
+    ROS_ERROR("ldlidar serial connect is fail");
     exit(EXIT_FAILURE);
   }
 
-  if (ldlidar_drv->WaitLidarCommConnect(3500)) {
+  if (ldlidar_drv->WaitLidarComm(3500)) {
     ROS_INFO("ldlidar communication is normal.");
   } else {
     ROS_ERROR("ldlidar communication is abnormal.");
     exit(EXIT_FAILURE);
+  }
+
+  if (ldlidar_drv->Start()) {
+    ROS_INFO("ldlidar driver start is success.");
+  } else {
+    ROS_ERROR("ldlidar driver start is fail.");
   }
 
   ros::Publisher lidar_pub_laserscan = 
@@ -117,7 +126,7 @@ int main(int argc, char **argv) {
   ldlidar::Points2D laser_scan_points;
   ROS_INFO("start normal, pub lidar data");
   while (ros::ok() && 
-    ldlidar::LDLidarDriver::IsOk()) {
+    ldlidar::LDLidarDriverLinuxInterface::Ok()) {
 
     switch (ldlidar_drv->GetLaserScanData(laser_scan_points, 1500)){
       case ldlidar::LidarStatus::NORMAL: {
@@ -129,7 +138,6 @@ int main(int argc, char **argv) {
       }
       case ldlidar::LidarStatus::DATA_TIME_OUT: {
         ROS_ERROR("point cloud data publish time out, please check your lidar device.");
-        ldlidar_drv->Stop();
         break;
       }
       case ldlidar::LidarStatus::DATA_WAIT: {
@@ -143,9 +151,9 @@ int main(int argc, char **argv) {
   }
 
   ldlidar_drv->Stop();
+  ldlidar_drv->Disconnect();
 
-  delete ldlidar_drv;
-  ldlidar_drv = nullptr;
+  ldlidar::LDLidarDriverLinuxInterface::Destory(ldlidar_drv);
   
   return 0;
 }
